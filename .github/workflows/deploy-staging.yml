@@ -31,10 +31,11 @@ jobs:
 
     - name: SSH into EC2 and Deploy
       run: |
-        echo "${{ secrets.EC2_PRIVATE_KEY }}" > private_key.pem
+        echo "${{ secrets.EC2_PRIVATE_KEY }}" | tr -d '\r' > private_key.pem
         chmod 600 private_key.pem
         ssh -i private_key.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-          cd /home/ubuntu/WiseAnalytics/my-web-app  # ✅ Replace with actual path
-          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/my-web-app:latest
-          sudo docker-compose up -d  # ✅ Ensure docker-compose.yml is in this directory
+        cd /home/ubuntu/WiseAnalytics/my-web-app  # ✅ Replace with actual path
+        sudo docker pull ${{ secrets.DOCKER_USERNAME }}/my-web-app:latest
+        sudo docker-compose up -d  # ✅ Ensure docker-compose.yml is in this directory
         EOF
+
