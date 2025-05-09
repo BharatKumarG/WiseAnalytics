@@ -1,7 +1,9 @@
 name: Deploy to EC2
 
 on:
-  workflow-dispatch
+  push:
+    branches:
+      - develop
 
 jobs:
   build-and-deploy:
