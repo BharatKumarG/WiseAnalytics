@@ -1,8 +1,15 @@
+FROM node:14
 
-FROM node:18-alpine
 WORKDIR /app
+
+# Copy package.json and package-lock.json for dependency installation
 COPY package*.json ./
-RUN npm ci
+
+# Install dependencies
+RUN npm install
+
 COPY . .
+
 EXPOSE 3000
+
 CMD ["npm", "start"]
