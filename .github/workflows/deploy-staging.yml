@@ -28,13 +28,16 @@ jobs:
         docker build -t ${{ secrets.DOCKER_USERNAME }}/my-web-app:latest .
         docker push ${{ secrets.DOCKER_USERNAME }}/my-web-app:latest
 
-    - name: SSH into EC2 and Deploy
+    - name: Deploy to EC2
       run: |
         echo "${{ secrets.EC2_PRIVATE_KEY }}" | tr -d '\r' > gg.pem
         chmod 600 gg.pem
+        eval "$(ssh-agent -s)"
+        ssh-add gg.pem
         ssh -i gg.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-        cd /home/ubuntu/WiseAnalytics/my-web-app  # ✅ Replace with actual path
+        cd /home/ubuntu/WiseAnalytics/my-web-app
         sudo docker pull ${{ secrets.DOCKER_USERNAME }}/my-web-app:latest
-        sudo docker-compose up -d  # ✅ Ensure docker-compose.yml is in this directory
+        sudo docker-compose up -d
         EOF
+
 
