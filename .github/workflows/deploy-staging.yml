@@ -30,8 +30,11 @@ jobs:
 
     - name: SSH into EC2 and Deploy
       run: |
-        ssh -i ${{ secrets.EC2_PRIVATE_KEY }} -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          cd /path/to/your/app
-          docker pull ${{ secrets.DOCKER_USERNAME }}/my-web-app:latest
-          docker-compose -f docker-compose.staging.yml up -d
+        echo "${{ secrets.EC2_PRIVATE_KEY }}" > private_key.pem
+        chmod 600 private_key.pem
+        ssh -i private_key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+        cd /path/to/your/app
+        docker pull ${{ secrets.DOCKER_USERNAME }}/my-web-app:latest
+        docker-compose -f docker-compose.staging.yml up -d
         EOF
+
