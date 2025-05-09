@@ -1,46 +1,52 @@
-name: CI/CD Pipeline
+name: Deploy to EC2
 
 on:
   push:
     branches:
-      - develop  # Trigger this workflow when code is pushed to 'develop'
+      - develop
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    
     steps:
-      # Checkout the code from the repository
       - name: Checkout code
         uses: actions/checkout@v2
-        
-      # Set up Docker
+
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-        
-      # Login to Docker Hub
-      - name: Login to Docker Hub
+        uses: docker/setup-buildx-action@v2
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build and push the Docker image
       - name: Build and push Docker image
         run: |
           docker build -t gudurubharatkumar/my-web-app:latest .
           docker push gudurubharatkumar/my-web-app:latest
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      # SSH into EC2 instance and deploy the app
+      - name: Decode EC2 private key
+        run: |
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" | base64 --decode > private_key.pem
+          chmod 600 private_key.pem
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.1
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          key: private_key.pem
           script: |
+            cd /home/ubuntu/WiseAnalytics/my-web-app
             docker pull gudurubharatkumar/my-web-app:latest
-            docker-compose -f /home/ubuntu/WiseAnalytics/my-web-app/docker-compose.staging.yml up -d
+            docker-compose -f docker-compose.staging.yml up -d
