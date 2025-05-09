@@ -30,15 +30,24 @@ jobs:
 
     - name: Deploy to EC2
       run: |
+        # Create the ~/.ssh directory if it doesn't exist
+        mkdir -p ~/.ssh
+
         # Write private key from secrets to gg.pem
         echo "${{ secrets.EC2_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/gg.pem
+        
+        # Set proper permissions
         chmod 600 ~/.ssh/gg.pem
+        
+        # Start the SSH agent
         eval "$(ssh-agent -s)"
+        
+        # Add the private key to the SSH agent
         ssh-add ~/.ssh/gg.pem
 
         # SSH into EC2 and deploy the app
         ssh -i ~/.ssh/gg.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-        cd /home/ubuntu/WiseAnalytics/my-web-app  # Make sure this path is correct
+        cd /home/ubuntu/WiseAnalytics/my-web-app  # Ensure the path is correct
         sudo docker pull ${{ secrets.DOCKER_USERNAME }}/my-web-app:latest
         sudo docker-compose up -d  # Ensure docker-compose.yml exists in this directory
         EOF
